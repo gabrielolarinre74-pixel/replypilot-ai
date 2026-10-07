@@ -1,0 +1,24 @@
+---
+import Themetoggle from './Themetoggle.astro'
+---
+
+<header class="flex items-center justify-between mb-8">
+  <a href={import.meta.env.BASE_URL} class="flex items-center gap-3 no-underline">
+    <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-brand-400 to-indigo-700 grid place-items-center text-white text-xl shadow-lg shadow-brand-500/30">
+      <span class="i-ph-paper-plane-tilt-fill"></span>
+    </div>
+    <div>
+      <div class="text-xl font-extrabold tracking-tight">Reply<span class="text-brand-500">Pilot</span></div>
+      <div class="text-xs text-slate-500">AI support agent by Gabriel.ATH</div>
+    </div>
+  </a>
+  <Themetoggle />
+</header>
+<section class="mb-8">
+  <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight max-w-3xl leading-tight">
+    Answer every customer in seconds, <span class="bg-gradient-to-r from-brand-500 to-indigo-500 bg-clip-text text-transparent">without making things up.</span>
+  </h1>
+  <p class="mt-3 text-slate-500 max-w-2xl">
+    ReplyPilot reads your policies and FAQs, answers live chat and drafts email replies with sources, triages urgency and sentiment, and hands tricky conversations to your team.
+  </p>
+</section>
