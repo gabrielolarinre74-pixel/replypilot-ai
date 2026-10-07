@@ -1,0 +1,91 @@
+---
+export interface Props {
+  title: string;
+}
+
+const { title } = Astro.props;
+---
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover">
+    <link rel="icon" type="image/svg+xml" href={`${import.meta.env.BASE_URL.replace(/\/$/, '')}/icon.svg`}>
+    <meta name="theme-color" content="#4f6bff">
+    <meta property="og:title" content={title}>
+    <meta property="og:description" content="AI customer support and email reply agent grounded in your own knowledge base.">
+    <meta name="generator" content={Astro.generator}>
+    <title>{title}</title>
+    <meta name="description" content="ReplyPilot answers customer chats and drafts email replies from your own policies and FAQs, with sources, triage and human hand-off.">
+  </head>
+  <body>
+    <slot />
+  </body>
+</html>
+
+<style is:global>
+  :root {
+    --c-bg: #f5f7fb;
+    --c-fg: #0f172a;
+    --c-scroll: #d9d9d9;
+    --c-scroll-hover: #bbbbbb;
+    scrollbar-color: var(--c-scrollbar) var(--c-bg);
+  }
+
+  html {
+    font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    background-image: radial-gradient(60rem 30rem at 85% -10%, #4f6bff1f, transparent), radial-gradient(40rem 25rem at -10% 10%, #8b5cf614, transparent);
+    background-attachment: fixed;
+    min-height: 100vh;
+    background-color: var(--c-bg);
+    color: var(--c-fg);
+  }
+
+  html.dark {
+    --c-bg: #0b1020;
+    --c-fg: #e2e8f0;
+    --c-scroll: #333333;
+    --c-scroll-hover: #555555;
+  }
+
+  main {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem 1.25rem 2rem;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background-color: var(--c-scroll);
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: var(--c-scroll-hover);
+  }
+  ::-webkit-scrollbar-track {
+    background-color: var(--c-bg);
+  }
+</style>
+
+<script>
+const initTheme = () => {
+  const darkSchema
+    = window.matchMedia
+    && window.matchMedia('(prefers-color-scheme: dark)').matches
+  const storageTheme = localStorage.getItem('theme')
+  if (storageTheme) {
+    document.documentElement.classList.toggle(
+      'dark',
+      storageTheme === 'dark',
+    )
+  } else {
+    document.documentElement.classList.toggle('dark', darkSchema)
+  }
+}
+
+initTheme()
+</script>
