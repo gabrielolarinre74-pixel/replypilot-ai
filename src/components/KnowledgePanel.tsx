@@ -1,4 +1,4 @@
-import { For, Show, createMemo, createSignal } from 'solid-js'
+import { For, Show, createEffect, createMemo, createSignal } from 'solid-js'
 import type { Accessor, Setter } from 'solid-js'
 import type { KnowledgeDoc, KnowledgeIndex } from '@/lib/rag'
 
@@ -7,37 +7,74 @@ interface Props {
   setDocs: Setter<KnowledgeDoc[]>
   index: Accessor<KnowledgeIndex>
   onReset: () => void
+  /** a starter document coming from Insights → Knowledge gaps */
+  prefill: Accessor<{ title: string, content: string } | null>
+  clearPrefill: () => void
 }
 
 const MAX_DOC_CHARS = 20000
 const MAX_FILE_BYTES = 200_000
 const uid = () => `doc-${Math.random().toString(36).slice(2, 9)}`
+const wordCount = (s: string) => (s.trim() ? s.trim().split(/\s+/).length : 0)
 
 export default (props: Props) => {
-  const [editing, setEditing] = createSignal<KnowledgeDoc | null>(null)
+  const [selected, setSelected] = createSignal<string | null>(props.docs()[0]?.id ?? null)
   const [title, setTitle] = createSignal('')
   const [content, setContent] = createSignal('')
+  const [filter, setFilter] = createSignal('')
   const [notice, setNotice] = createSignal('')
   const [probe, setProbe] = createSignal('')
-  const probeHits = createMemo(() => (probe().trim().length > 2 ? props.index().search(probe(), 3) : []))
-  const words = createMemo(() => props.docs().reduce((n, d) => n + d.content.split(/\s+/).length, 0))
+  const [view, setView] = createSignal<'edit' | 'test'>('edit')
+  const probeHits = createMemo(() => (probe().trim().length > 2 ? props.index().search(probe(), 4) : []))
+  const words = createMemo(() => props.docs().reduce((n, d) => n + wordCount(d.content), 0))
+  const visible = createMemo(() => {
+    const f = filter().toLowerCase().trim()
+    return f ? props.docs().filter(d => `${d.title} ${d.content}`.toLowerCase().includes(f)) : props.docs()
+  })
+  const current = () => props.docs().find(d => d.id === selected())
+  const dirty = () => (current() ? current()!.title !== title() || current()!.content !== content() : !!(title() || content()))
 
-  const startNew = () => { setEditing({ id: '', title: '', content: '' }); setTitle(''); setContent('') }
-  const startEdit = (d: KnowledgeDoc) => { setEditing(d); setTitle(d.title); setContent(d.content) }
+  const flash = (m: string) => { setNotice(m); setTimeout(() => setNotice(''), 2600) }
+  const select = (d: KnowledgeDoc | null) => {
+    setSelected(d?.id ?? null)
+    setTitle(d?.title ?? '')
+    setContent(d?.content ?? '')
+    setView('edit')
+  }
+  createEffect(() => { if (selected() && !title() && !content() && current()) select(current()!) })
+
+  createEffect(() => {
+    const p = props.prefill()
+    if (!p) return
+    setSelected(null)
+    setTitle(p.title)
+    setContent(p.content)
+    setView('edit')
+    props.clearPrefill()
+    flash('Starter document created from a knowledge gap. Write the answer, then save.')
+  })
 
   const saveDoc = () => {
     const t = title().trim().slice(0, 120)
     const c = content().trim().slice(0, MAX_DOC_CHARS)
-    if (!t || c.length < 20) { setNotice('Give the document a title and at least a sentence of content.'); return }
-    const cur = editing()!
-    if (cur.id) props.setDocs(props.docs().map(d => (d.id === cur.id ? { ...d, title: t, content: c, updatedAt: Date.now() } : d)))
-    else props.setDocs([...props.docs(), { id: uid(), title: t, content: c, updatedAt: Date.now() }])
-    setEditing(null)
-    setNotice(`Saved "${t}". The index was rebuilt instantly.`)
+    if (!t || c.length < 20) { flash('Give the document a title and at least a sentence of content.'); return }
+    const cur = current()
+    if (cur) {
+      props.setDocs(props.docs().map(d => (d.id === cur.id ? { ...d, title: t, content: c, updatedAt: Date.now() } : d)))
+    } else {
+      const doc = { id: uid(), title: t, content: c, updatedAt: Date.now() }
+      props.setDocs([...props.docs(), doc])
+      setSelected(doc.id)
+    }
+    flash(`Saved “${t}”. Search index rebuilt.`)
   }
 
-  const remove = (d: KnowledgeDoc) => {
-    if (confirm(`Delete "${d.title}" from the knowledge base?`)) props.setDocs(props.docs().filter(x => x.id !== d.id))
+  const remove = () => {
+    const d = current()
+    if (!d || !confirm(`Delete “${d.title}” from the knowledge base?`)) return
+    const rest = props.docs().filter(x => x.id !== d.id)
+    props.setDocs(rest)
+    select(rest[0] ?? null)
   }
 
   const onFiles = async(files: FileList | null) => {
@@ -50,7 +87,8 @@ export default (props: Props) => {
       added.push({ id: uid(), title: f.name.replace(/\.(md|markdown|txt)$/i, '').replace(/[-_]+/g, ' '), content: text, updatedAt: Date.now() })
     }
     props.setDocs([...props.docs(), ...added])
-    setNotice(`${added.length} file(s) added.${skipped.length ? ` Skipped (only .md/.txt under 200 KB): ${skipped.join(', ')}` : ''}`)
+    if (added[0]) select(added[0])
+    flash(`${added.length} file${added.length === 1 ? '' : 's'} added.${skipped.length ? ` Skipped (only .md/.txt under 200 KB): ${skipped.join(', ')}` : ''}`)
   }
 
   const exportKb = () => {
@@ -58,66 +96,94 @@ export default (props: Props) => {
     a.href = URL.createObjectURL(new Blob([JSON.stringify(props.docs(), null, 2)], { type: 'application/json' }))
     a.download = 'replypilot-knowledge-base.json'
     a.click()
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000)
   }
 
   return (
-    <div class="grid lg:grid-cols-[1fr_360px] gap-5">
-      <section class="card p-5">
-        <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
-          <div>
-            <h2 class="font-bold text-lg flex items-center gap-2"><span class="i-ph-books-bold text-brand-500" />Knowledge base</h2>
-            <p class="text-sm text-slate-500">{props.docs().length} documents · {props.index().chunks.length} searchable passages · {words().toLocaleString()} words. Stored in this browser only.</p>
-          </div>
-          <div class="flex flex-wrap gap-2">
-            <label class="btn-ghost cursor-pointer"><span class="i-ph-upload-simple-bold" />Upload .md / .txt<input type="file" class="hidden" multiple accept=".md,.markdown,.txt,text/plain,text/markdown" onChange={e => onFiles(e.currentTarget.files)} /></label>
-            <button class="btn-primary" onClick={startNew}><span class="i-ph-plus-bold" />New document</button>
+    <div class="grid h-full min-h-0 gap-4 lg:grid-cols-[300px_minmax(0,1fr)]">
+      <aside class="surface flex min-h-0 flex-col overflow-hidden">
+        <div class="border-b border-ink-100 p-3">
+          <div class="relative">
+            <span class="i-ph-magnifying-glass-bold absolute left-3 top-1/2 -translate-y-1/2 text-ink-400" />
+            <input class="field !pl-9" placeholder="Filter documents" value={filter()} onInput={e => setFilter(e.currentTarget.value)} aria-label="Filter documents" />
           </div>
         </div>
-        <Show when={notice()}><div class="mb-3 text-sm rounded-lg bg-brand-50 text-brand-700 dark:(bg-brand-500/10 text-brand-100) px-3 py-2">{notice()}</div></Show>
-
-        <Show when={editing()}>
-          <div class="rounded-xl border-2 border-brand-400/60 p-4 mb-4 space-y-3">
-            <input class="field font-semibold" placeholder="Title, e.g. Refund policy" value={title()} maxLength={120} onInput={e => setTitle(e.currentTarget.value)} />
-            <textarea class="field min-h-48 leading-relaxed" placeholder="Paste the policy, FAQ or product info. Separate topics with blank lines." value={content()} maxLength={MAX_DOC_CHARS} onInput={e => setContent(e.currentTarget.value)} />
-            <div class="flex justify-end gap-2"><button class="btn-ghost" onClick={() => setEditing(null)}>Cancel</button><button class="btn-primary" onClick={saveDoc}>Save document</button></div>
-          </div>
-        </Show>
-
-        <div class="grid sm:grid-cols-2 gap-3">
-          <For each={props.docs()}>{d => (
-            <article class="group rounded-xl border border-slate-200 dark:border-ink-600 p-4 hover:(border-brand-400/60 shadow-md) transition">
-              <div class="flex items-start justify-between gap-2">
-                <h3 class="font-semibold">{d.title}</h3>
-                <div class="flex gap-1 op-60 group-hover:op-100">
-                  <button class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-ink-600" title="Edit" onClick={() => startEdit(d)}><span class="i-ph-pencil-simple-bold" /></button>
-                  <button class="p-1.5 rounded-lg hover:bg-rose-50 text-rose-500 dark:hover:bg-rose-500/10" title="Delete" onClick={() => remove(d)}><span class="i-ph-trash-bold" /></button>
-                </div>
-              </div>
-              <p class="text-sm text-slate-500 mt-1 line-clamp-3">{d.content}</p>
-              <div class="text-xs text-slate-400 mt-2">{d.content.split(/\s+/).length} words · {(n => `${n} passage${n === 1 ? "" : "s"}`)(props.index().chunks.filter(c => c.docId === d.id).length)}</div>
-            </article>
-          )}</For>
-        </div>
-        <div class="flex gap-4 mt-5 text-sm">
-          <button class="text-slate-500 hover:text-brand-600 flex items-center gap-1" onClick={exportKb}><span class="i-ph-download-simple-bold" />Export as JSON</button>
-          <button class="text-slate-500 hover:text-rose-600 flex items-center gap-1" onClick={() => confirm('Replace your documents with the sample store?') && props.onReset()}><span class="i-ph-arrow-counter-clockwise-bold" />Reset to sample data</button>
-        </div>
-      </section>
-
-      <aside class="card p-5 h-fit lg:sticky lg:top-6">
-        <h3 class="font-bold flex items-center gap-2"><span class="i-ph-magnifying-glass-bold text-brand-500" />Retrieval tester</h3>
-        <p class="text-sm text-slate-500 mb-3">See exactly which passages the agent would use for a question.</p>
-        <input class="field" placeholder="e.g. do you deliver to Canada?" value={probe()} onInput={e => setProbe(e.currentTarget.value)} />
-        <ol class="mt-3 space-y-2">
-          <For each={probeHits()} fallback={<li class="text-sm text-slate-400"><Show when={probe().trim().length > 2} fallback="Type a question to test.">No passage matches. The agent would hand this off to a human.</Show></li>}>{(h, i) => (
-            <li class="rounded-lg bg-slate-50 dark:bg-ink-900/60 p-3 text-xs">
-              <div class="flex justify-between font-semibold mb-1"><span>[{i() + 1}] {h.chunk.docTitle}</span><span class="text-slate-400 tabular-nums">{h.score.toFixed(2)}</span></div>
-              <div class="h-1.5 rounded-full bg-slate-200 dark:bg-ink-600 mb-2 overflow-hidden"><div class="h-full bg-brand-500" style={{ width: `${Math.round(h.coverage * 100)}%` }} /></div>
-              <p class="text-slate-500 line-clamp-4">{h.chunk.text}</p>
+        <ul class="flex-1 overflow-y-auto p-2">
+          <For each={visible()} fallback={<li class="p-4 text-center text-[12px] text-ink-500">No documents match.</li>}>{d => (
+            <li>
+              <button class={`flex w-full items-start gap-2.5 rounded-lg px-3 py-2.5 text-left transition ${selected() === d.id ? 'bg-ink-950 text-white' : 'hover:bg-ink-50'}`} onClick={() => select(d)}>
+                <span class={`i-ph-file-text-bold mt-0.5 shrink-0 ${selected() === d.id ? 'text-brand-400' : 'text-ink-400'}`} />
+                <span class="min-w-0">
+                  <span class="block truncate text-[13px] font-semibold">{d.title}</span>
+                  <span class={`block text-[11.5px] ${selected() === d.id ? 'text-ink-400' : 'text-ink-500'}`}>{wordCount(d.content)} words · {props.index().chunks.filter(c => c.docId === d.id).length} passages</span>
+                </span>
+              </button>
             </li>
           )}</For>
-        </ol>
+        </ul>
+        <div class="space-y-2 border-t border-ink-100 p-3">
+          <div class="grid grid-cols-2 gap-2">
+            <button class="btn-primary" onClick={() => select(null)}><span class="i-ph-plus-bold" />New</button>
+            <label class="btn-ghost cursor-pointer"><span class="i-ph-upload-simple-bold" />Upload<input type="file" class="hidden" multiple accept=".md,.markdown,.txt,text/plain,text/markdown" onChange={e => onFiles(e.currentTarget.files)} /></label>
+          </div>
+          <div class="flex justify-between text-[11.5px] text-ink-500">
+            <button class="hover:text-ink-950" onClick={exportKb}>Export JSON</button>
+            <button class="hover:text-red-600" onClick={() => { if (confirm('Replace your documents with the sample store?')) { props.onReset(); setSelected(null); setTitle(''); setContent('') } }}>Reset to sample</button>
+          </div>
+        </div>
       </aside>
+
+      <section class="surface relative flex min-h-0 flex-col overflow-hidden">
+        <header class="flex flex-wrap items-center justify-between gap-3 border-b border-ink-100 px-5 py-3">
+          <div class="flex rounded-lg bg-ink-100 p-0.5">
+            <button class={`rounded-md px-3 py-1 text-[12.5px] font-semibold transition ${view() === 'edit' ? 'bg-white text-ink-950 shadow-sm' : 'text-ink-500'}`} onClick={() => setView('edit')}>Editor</button>
+            <button class={`rounded-md px-3 py-1 text-[12.5px] font-semibold transition ${view() === 'test' ? 'bg-white text-ink-950 shadow-sm' : 'text-ink-500'}`} onClick={() => setView('test')}>Retrieval test</button>
+          </div>
+          <div class="text-[12px] text-ink-500">{props.docs().length} documents · {props.index().chunks.length} passages · {words().toLocaleString()} words · stored in this browser</div>
+        </header>
+
+        <Show when={view() === 'edit'} fallback={
+          <div class="flex-1 overflow-y-auto p-5">
+            <p class="mb-3 text-[13px] text-ink-500">Type a customer question to see exactly which passages the agent would read, and how strongly each one matches.</p>
+            <div class="relative">
+              <span class="i-ph-chat-centered-text-bold absolute left-3 top-1/2 -translate-y-1/2 text-ink-400" />
+              <input class="field !h-11 !pl-9" placeholder="e.g. do you deliver to Canada?" value={probe()} onInput={e => setProbe(e.currentTarget.value)} aria-label="Test question" />
+            </div>
+            <ol class="mt-4 space-y-2.5">
+              <For each={probeHits()} fallback={
+                <li class="rounded-xl border border-dashed border-ink-200 p-6 text-center text-[13px] text-ink-500">
+                  <Show when={probe().trim().length > 2} fallback="Results appear as you type.">No passage matches, so the agent would hand this question to a human.</Show>
+                </li>
+              }>{(h, i) => (
+                <li class="rise rounded-xl bg-white p-4 ring-1 ring-ink-200">
+                  <div class="mb-2 flex items-center justify-between gap-3">
+                    <span class="flex items-center gap-2 text-[13px] font-semibold text-ink-950"><span class="grid h-5 w-5 place-items-center rounded bg-brand-100 text-[11px] font-bold text-brand-700">{i() + 1}</span>{h.chunk.docTitle}</span>
+                    <span class="text-[11.5px] tabular-nums text-ink-500">score {h.score.toFixed(2)}</span>
+                  </div>
+                  <div class="mb-2 h-1.5 overflow-hidden rounded-full bg-ink-100"><div class="h-full rounded-full bg-gradient-to-r from-brand-500 to-brand-400" style={{ width: `${Math.round(h.coverage * 100)}%` }} /></div>
+                  <p class="text-[13px] leading-relaxed text-ink-600">{h.chunk.text}</p>
+                </li>
+              )}</For>
+            </ol>
+          </div>
+        }>
+          <div class="flex flex-1 flex-col overflow-y-auto p-5">
+            <input class="mb-1 w-full bg-transparent text-xl font-bold tracking-tight text-ink-950 outline-none placeholder:text-ink-300" placeholder="Untitled document" value={title()} maxLength={120} onInput={e => setTitle(e.currentTarget.value)} aria-label="Document title" />
+            <div class="mb-4 text-[12px] text-ink-400">{current() ? `Last edited ${new Date(current()!.updatedAt || Date.now()).toLocaleDateString()}` : 'New document'} · {wordCount(content())} words</div>
+            <textarea class="min-h-80 flex-1 resize-none bg-transparent text-[14px] leading-7 text-ink-800 outline-none placeholder:text-ink-300" placeholder="Paste a policy, FAQ or product details. Separate topics with blank lines so each becomes its own searchable passage." value={content()} maxLength={MAX_DOC_CHARS} onInput={e => setContent(e.currentTarget.value)} aria-label="Document content" />
+          </div>
+          <footer class="flex items-center justify-between gap-2 border-t border-ink-100 bg-ink-50/60 px-5 py-3">
+            <Show when={current()} fallback={<span />}>
+              <button class="btn-icon hover:(!bg-red-50 !text-red-600)" title="Delete document" aria-label="Delete document" onClick={remove}><span class="i-ph-trash-bold" /></button>
+            </Show>
+            <div class="flex items-center gap-3">
+              <Show when={dirty()}><span class="text-[12px] text-ink-500">Unsaved changes</span></Show>
+              <button class="btn-blue" onClick={saveDoc} disabled={!dirty()}><span class="i-ph-check-bold" />Save document</button>
+            </div>
+          </footer>
+        </Show>
+        <Show when={notice()}><div class="rise absolute bottom-16 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-ink-950 px-3 py-2 text-[12px] font-medium text-white shadow-lg">{notice()}</div></Show>
+      </section>
     </div>
   )
 }
