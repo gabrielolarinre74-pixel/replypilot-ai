@@ -37,6 +37,8 @@ export function stem(word: string): string {
   else if (w.length > 5 && w.endsWith('ly')) w = w.slice(0, -2)
   // "damage" and "damaged" should meet at "damag"
   if (w.length > 4 && w.endsWith('e') && !w.endsWith('ee')) w = w.slice(0, -1)
+  // "shipping"/"shipped" -> "shipp" -> "ship", so they match "ship"
+  if (w !== word && w.length > 3 && /([bdgmnprt])\1$/.test(w)) w = w.slice(0, -1)
   return w
 }
 

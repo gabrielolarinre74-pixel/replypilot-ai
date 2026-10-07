@@ -47,3 +47,12 @@ describe('retrieval', () => {
     expect(docs.has('shipping')).toBe(true)
   })
 })
+
+describe('stemming', () => {
+  it('collapses doubled consonants left by -ing/-ed', () => {
+    expect(stem('shipping')).toBe(stem('ship'))
+    expect(stem('shipped')).toBe(stem('ship'))
+    expect(stem('planned')).toBe(stem('plan'))
+    expect(stem('dress')).toBe('dress')
+  })
+})
