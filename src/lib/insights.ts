@@ -94,10 +94,11 @@ export interface Gap {
   examples: string[]
 }
 
-const jaccard = (a: Set<string>, b: Set<string>) => {
+/** Overlap coefficient: shared words relative to the shorter question. */
+const overlap = (a: Set<string>, b: Set<string>) => {
   let inter = 0
   for (const x of a) if (b.has(x)) inter++
-  return inter / Math.max(1, a.size + b.size - inter)
+  return inter / Math.max(1, Math.min(a.size, b.size))
 }
 
 /**
@@ -105,13 +106,13 @@ const jaccard = (a: Set<string>, b: Set<string>) => {
  * near-duplicates ("do you ship to Japan" / "shipping to japan?") count once.
  * Sorted by how often they were asked, then by recency.
  */
-export function knowledgeGaps(log: LogEntry[], threshold = 0.45): Gap[] {
+export function knowledgeGaps(log: LogEntry[], threshold = 0.6): Gap[] {
   const groups: { tokens: Set<string>, gap: Gap }[] = []
   for (const e of log) {
     if (e.confidence !== 'low' || !e.question) continue
     const tokens = new Set(tokenize(e.question))
     if (!tokens.size) continue
-    const match = groups.find(g => jaccard(g.tokens, tokens) >= threshold)
+    const match = groups.find(g => overlap(g.tokens, tokens) >= threshold)
     if (match) {
       match.gap.count++
       match.gap.lastAt = Math.max(match.gap.lastAt, e.at)

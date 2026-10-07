@@ -239,7 +239,7 @@ export default (props: Props) => {
           </Show>
           <Sources hits={hits()} />
         </Show>
-        <Show when={notice()}><div class="rise absolute bottom-4 left-1/2 -translate-x-1/2 rounded-lg bg-ink-950 px-3 py-2 text-[12px] font-medium text-white shadow-lg">{notice()}</div></Show>
+        <Show when={notice()}><div class="rise absolute bottom-4 left-1/2 w-max max-w-[90%] -translate-x-1/2 rounded-lg bg-ink-950 px-3 py-2 text-[12px] font-medium text-white shadow-lg">{notice()}</div></Show>
       </section>
     </div>
   )

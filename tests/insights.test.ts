@@ -33,6 +33,11 @@ describe('conversation analytics', () => {
     expect(gaps[1].question).toBe('Can I pay with crypto?')
   })
 
+  it('groups differently phrased versions of the same question', () => {
+    const gaps = knowledgeGaps([entry('Do you offer gift wrapping?', 'low', 1), entry('Is gift wrapping available for orders?', 'low', 2), entry('Do you ship to Canada?', 'low', 3)])
+    expect(gaps.map(g => g.count)).toEqual([2, 1])
+  })
+
   it('drafts a starter document from a gap', () => {
     const d = draftFromGap(knowledgeGaps(log)[0])
     expect(d.title).toBe('Do you ship to Japan?')

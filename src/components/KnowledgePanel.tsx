@@ -53,7 +53,7 @@ export default (props: Props) => {
     setContent(p.content)
     setView('edit')
     props.clearPrefill()
-    flash('Starter document created from a knowledge gap. Write the answer, then save.')
+    flash('Draft created from a knowledge gap. Add the answer and save.')
   })
 
   const saveDoc = () => {
@@ -184,7 +184,7 @@ export default (props: Props) => {
             </div>
           </footer>
         </Show>
-        <Show when={notice()}><div class="rise absolute bottom-16 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-ink-950 px-3 py-2 text-[12px] font-medium text-white shadow-lg">{notice()}</div></Show>
+        <Show when={notice()}><div class="rise absolute bottom-16 left-1/2 w-max max-w-[90%] -translate-x-1/2 rounded-lg bg-ink-950 px-3 py-2 text-[12px] font-medium text-white shadow-lg">{notice()}</div></Show>
       </section>
     </div>
   )
