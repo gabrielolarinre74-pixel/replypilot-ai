@@ -1,4 +1,4 @@
-import { For, Show, createEffect, createMemo, createSignal } from 'solid-js'
+import { For, Show, createEffect, createMemo, createSignal, onMount } from 'solid-js'
 import type { Accessor, Setter } from 'solid-js'
 import type { KnowledgeDoc, KnowledgeIndex } from '@/lib/rag'
 
@@ -41,7 +41,9 @@ export default (props: Props) => {
     setContent(d?.content ?? '')
     setView('edit')
   }
-  createEffect(() => { if (selected() && !title() && !content() && current()) select(current()!) })
+  onMount(() => { if (!props.prefill()) select(props.docs()[0] ?? null) })
+  // if the selected document disappears (reset, delete, storage load), fall back to the first one
+  createEffect(() => { if (selected() && !current()) select(props.docs()[0] ?? null) })
 
   createEffect(() => {
     const p = props.prefill()

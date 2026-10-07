@@ -1,37 +1,50 @@
 import { Show } from 'solid-js'
 import { INTENT_LABEL } from '@/lib/triage'
 import type { Triage } from '@/lib/triage'
+import type { Confidence } from '@/lib/rag'
 
-const SENT = {
-  negative: 'bg-rose-100 text-rose-700 dark:(bg-rose-500/15 text-rose-300)',
-  neutral: 'bg-slate-100 text-slate-600 dark:(bg-slate-500/15 text-slate-300)',
-  positive: 'bg-emerald-100 text-emerald-700 dark:(bg-emerald-500/15 text-emerald-300)',
+const SENTIMENT = {
+  negative: { cls: 'bg-red-50 text-red-700 ring-red-200', icon: 'i-ph-smiley-sad-bold' },
+  neutral: { cls: 'bg-ink-100 text-ink-700 ring-ink-200', icon: 'i-ph-smiley-meh-bold' },
+  positive: { cls: 'bg-emerald-50 text-emerald-700 ring-emerald-200', icon: 'i-ph-smiley-bold' },
 }
 
-export const ConfidenceChip = (props: { level?: 'high' | 'medium' | 'low' }) => {
-  const style = () => ({
-    high: 'bg-emerald-100 text-emerald-700 dark:(bg-emerald-500/15 text-emerald-300)',
-    medium: 'bg-amber-100 text-amber-700 dark:(bg-amber-500/15 text-amber-300)',
-    low: 'bg-rose-100 text-rose-700 dark:(bg-rose-500/15 text-rose-300)',
-  }[props.level || 'low'])
-  return (
-    <Show when={props.level}>
-      <span class={`chip ${style()}`} title="How well the knowledge base covers this question">
-        <span class="i-ph-gauge-bold" /> {props.level} confidence
-      </span>
-    </Show>
-  )
+const CONFIDENCE: Record<Confidence, { cls: string, bars: number, label: string }> = {
+  high: { cls: 'text-emerald-700', bars: 3, label: 'High confidence' },
+  medium: { cls: 'text-amber-700', bars: 2, label: 'Medium confidence' },
+  low: { cls: 'text-red-700', bars: 1, label: 'Low confidence' },
 }
 
-export const TriageBadges = (props: { triage: Triage }) => (
-  <div class="flex flex-wrap gap-1.5">
-    <span class="chip bg-brand-50 text-brand-700 dark:(bg-brand-500/15 text-brand-100)"><span class="i-ph-tag-bold" />{INTENT_LABEL[props.triage.intent]}</span>
-    <span class={`chip ${SENT[props.triage.sentiment]}`}><span class="i-ph-smiley-bold" />{props.triage.sentiment}</span>
+/** Signal-strength style meter: how well the knowledge base covers the question. */
+export const ConfidenceMeter = (props: { level?: Confidence }) => (
+  <Show when={props.level}>
+    {(() => {
+      const c = () => CONFIDENCE[props.level!]
+      return (
+        <span class={`inline-flex items-center gap-1.5 text-[11.5px] font-semibold ${c().cls}`} title="How well your knowledge base covers this question">
+          <span class="flex items-end gap-[2px] h-3">
+            {[1, 2, 3].map(i => <span class={`w-[3px] rounded-sm ${i <= c().bars ? 'bg-current' : 'bg-ink-200'}`} style={{ height: `${i * 4}px` }} />)}
+          </span>
+          {c().label}
+        </span>
+      )
+    })()}
+  </Show>
+)
+
+export const IntentChip = (props: { triage: Triage }) => (
+  <span class="chip bg-brand-50 text-brand-700 ring-1 ring-brand-200"><span class="i-ph-hash-bold text-[10px]" />{INTENT_LABEL[props.triage.intent]}</span>
+)
+
+export const TriageBadges = (props: { triage: Triage, compact?: boolean }) => (
+  <div class="flex flex-wrap items-center gap-1.5">
+    <IntentChip triage={props.triage} />
+    <span class={`chip ring-1 capitalize ${SENTIMENT[props.triage.sentiment].cls}`}><span class={SENTIMENT[props.triage.sentiment].icon} />{props.triage.sentiment}</span>
     <Show when={props.triage.urgency === 'high'}>
-      <span class="chip bg-orange-100 text-orange-700 dark:(bg-orange-500/15 text-orange-300)"><span class="i-ph-lightning-bold" />urgent</span>
+      <span class="chip bg-amber-50 text-amber-800 ring-1 ring-amber-200"><span class="i-ph-lightning-fill" />Urgent</span>
     </Show>
     <Show when={props.triage.escalate}>
-      <span class="chip bg-rose-500 text-white" title={props.triage.reasons.join(' · ')}><span class="i-ph-user-switch-bold" />hand off to a human</span>
+      <span class="chip bg-ink-950 text-white" title={props.triage.reasons.join(' · ')}><span class="i-ph-user-switch-bold" />Needs a human</span>
     </Show>
   </div>
 )

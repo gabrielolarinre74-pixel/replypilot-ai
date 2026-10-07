@@ -1,12 +1,11 @@
-import { Show, createSignal } from 'solid-js'
+import { Show } from 'solid-js'
 import MarkdownIt from 'markdown-it'
 import hljs from 'highlight.js/lib/core'
 import json from 'highlight.js/lib/languages/json'
 import plaintext from 'highlight.js/lib/languages/plaintext'
 import { useClipboard } from './useClipboard'
-import { ConfidenceChip, TriageBadges } from './Badges'
+import { ConfidenceMeter } from './Badges'
 import Sources from './Sources'
-import IconRefresh from './icons/Refresh'
 import type { Accessor } from 'solid-js'
 import type { UiMessage } from '@/types'
 
@@ -15,6 +14,8 @@ interface Props {
   content?: Accessor<string>
   showRetry?: boolean
   onRetry?: () => void
+  onSelect?: () => void
+  selected?: boolean
 }
 
 // html: false keeps any HTML in model output escaped (prevents XSS from prompt-injected answers)
@@ -26,7 +27,6 @@ const md: MarkdownIt = MarkdownIt({
   breaks: true,
   highlight: (code, lang) => (lang && hljs.getLanguage(lang) ? hljs.highlight(code, { language: lang }).value : md.utils.escapeHtml(code)),
 })
-// open links in a new tab, safely
 md.renderer.rules.link_open = (tokens, idx, options, _env, self) => {
   tokens[idx].attrSet('target', '_blank')
   tokens[idx].attrSet('rel', 'noopener noreferrer')
@@ -43,33 +43,44 @@ export default (props: Props) => {
   const [copied, copy] = useClipboard()
 
   return (
-    <div class={`flex gap-3 py-3 ${isUser() ? 'flex-row-reverse' : ''}`}>
-      <div class={`shrink-0 w-9 h-9 rounded-full grid place-items-center text-white text-sm font-bold ${isUser() ? 'bg-gradient-to-br from-slate-400 to-slate-600' : 'bg-gradient-to-br from-brand-400 to-indigo-700'}`}>
-        {isUser() ? <span class="i-ph-user-bold" /> : <span class="i-ph-paper-plane-tilt-fill" />}
-      </div>
-      <div class={`min-w-0 max-w-[85%] ${isUser() ? 'items-end text-right' : ''} flex flex-col`}>
-        <div class={`rounded-2xl px-4 py-3 text-left ${isUser() ? 'bg-brand-500 text-white rounded-tr-sm' : 'bg-white dark:bg-ink-700 border border-slate-200/80 dark:border-ink-600 rounded-tl-sm'}`}>
-          <div class={`message prose prose-sm max-w-none break-words ${isUser() ? 'prose-invert' : 'dark:prose-invert'}`} innerHTML={renderMarkdown(text())} />
-        </div>
-        <Show when={isUser() && props.message.triage}>
-          <div class="mt-1.5 flex justify-end"><TriageBadges triage={props.message.triage!} /></div>
-        </Show>
-        <Show when={!isUser() && !props.content}>
-          <div class="mt-1.5 flex flex-wrap items-center gap-2">
-            <ConfidenceChip level={props.message.confidence} />
-            <span class="chip bg-slate-100 text-slate-500 dark:(bg-ink-700 text-slate-400)">{props.message.engine === 'openai' ? 'AI model' : 'Demo engine'}</span>
-            <button class="chip bg-slate-100 text-slate-500 hover:text-slate-800 dark:(bg-ink-700 text-slate-400 hover:text-white)" onClick={() => copy(text())}>
-              <span class={copied() ? 'i-ph-check-bold' : 'i-ph-copy-bold'} /> {copied() ? 'Copied' : 'Copy'}
-            </button>
-            <Show when={props.showRetry && props.onRetry}>
-              <button class="chip bg-slate-100 text-slate-500 hover:text-slate-800 dark:(bg-ink-700 text-slate-400 hover:text-white)" onClick={props.onRetry}>
-                <IconRefresh /> Regenerate
-              </button>
+    <div class={`rise flex py-2 ${isUser() ? 'justify-end' : 'justify-start'}`}>
+      <Show when={isUser()} fallback={
+        <div class="flex max-w-[88%] gap-3">
+          <div class="mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-ink-950 text-[13px] text-brand-400"><span class="i-ph-paper-plane-tilt-fill" /></div>
+          <div class="min-w-0">
+            <div class="mb-1 flex items-center gap-2 text-[12px]">
+              <span class="font-bold text-ink-950">ReplyPilot</span>
+              <span class="text-ink-400">{props.message.engine === 'openai' ? 'AI model' : 'Demo engine'}</span>
+            </div>
+            <div class={`rounded-2xl rounded-tl-md bg-white px-4 py-3 ring-1 transition ${props.selected ? 'ring-brand-300 shadow-[0_0_0_4px_rgba(59,130,246,.08)]' : 'ring-ink-200'}`}>
+              <Show when={text()} fallback={<div class="typing py-1"><span /><span /><span /></div>}>
+                <div class="answer break-words text-ink-900" innerHTML={renderMarkdown(text())} />
+              </Show>
+              <Show when={!props.content}>
+                <Sources hits={props.message.sources} />
+              </Show>
+            </div>
+            <Show when={!props.content}>
+              <div class="mt-1.5 flex flex-wrap items-center gap-3 pl-1">
+                <ConfidenceMeter level={props.message.confidence} />
+                <button class="flex items-center gap-1 text-[12px] font-medium text-ink-400 hover:text-ink-950" onClick={() => copy(text())}>
+                  <span class={copied() ? 'i-ph-check-bold text-emerald-600' : 'i-ph-copy-bold'} />{copied() ? 'Copied' : 'Copy'}
+                </button>
+                <Show when={props.showRetry && props.onRetry}>
+                  <button class="flex items-center gap-1 text-[12px] font-medium text-ink-400 hover:text-ink-950" onClick={props.onRetry}><span class="i-ph-arrow-clockwise-bold" />Regenerate</button>
+                </Show>
+              </div>
             </Show>
           </div>
-          <Sources hits={props.message.sources} />
-        </Show>
-      </div>
+        </div>
+      }>
+        <button class="group max-w-[75%] text-right" onClick={props.onSelect} title="Show details">
+          <div class={`bubble-user rounded-2xl rounded-tr-md bg-ink-950 px-4 py-2.5 text-left text-white transition ${props.selected ? 'ring-4 ring-brand-500/25' : ''}`}>
+            <div class="answer break-words" innerHTML={renderMarkdown(text())} />
+          </div>
+          <div class="mt-1 text-[11px] font-medium text-ink-400 group-hover:text-brand-600">Customer</div>
+        </button>
+      </Show>
     </div>
   )
 }
