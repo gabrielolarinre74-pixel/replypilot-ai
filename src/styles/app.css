@@ -1,0 +1,62 @@
+@import '@fontsource-variable/plus-jakarta-sans';
+@import '@fontsource-variable/jetbrains-mono';
+
+:root {
+  --bg: #fafafa;
+  --ink: #09090b;
+  color-scheme: light;
+}
+
+html {
+  font-family: 'Plus Jakarta Sans Variable', 'Plus Jakarta Sans', ui-sans-serif, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: 'cv11', 'ss01';
+}
+
+::selection { background: #bfdbfe; }
+
+* { scrollbar-width: thin; scrollbar-color: #d4d4d8 transparent; }
+
+/* Rendered answers */
+.answer { font-size: 14px; line-height: 1.65; }
+.answer p { margin: 0 0 .55em; }
+.answer p:last-child { margin-bottom: 0; }
+.answer ul, .answer ol { margin: .35em 0 .6em; padding-left: 1.2em; }
+.answer li { margin: .15em 0; }
+.answer a { color: #2563eb; text-decoration: underline; text-underline-offset: 2px; }
+.answer strong { font-weight: 700; color: inherit; }
+.answer code { font-family: 'JetBrains Mono Variable', monospace; font-size: .85em; background: #f4f4f5; padding: .1em .35em; border-radius: 5px; }
+.answer pre { background: #09090b; color: #e4e4e7; border-radius: 10px; padding: .8rem 1rem; overflow-x: auto; font-size: 12.5px; }
+.answer pre code { background: transparent; padding: 0; }
+.answer table { font-size: 13px; border-collapse: collapse; margin: .5em 0; }
+.answer th, .answer td { border-bottom: 1px solid #e4e4e7; padding: .4rem .7rem; text-align: left; }
+.answer sup.cite {
+  display: inline-grid;
+  place-items: center;
+  min-width: 1.05rem;
+  height: 1.05rem;
+  margin-left: 2px;
+  padding: 0 4px;
+  border-radius: 5px;
+  font-size: 10px;
+  font-weight: 700;
+  background: #dbeafe;
+  color: #1d4ed8;
+  vertical-align: 2px;
+}
+.bubble-user .answer a { color: #fff; }
+
+@keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.rise { animation: rise .28s cubic-bezier(.2,.7,.2,1) both; }
+
+@keyframes blink { 50% { opacity: .2; } }
+.typing span { display: inline-block; width: 6px; height: 6px; margin: 0 2px; border-radius: 99px; background: #2563eb; animation: blink 1s infinite; }
+.typing span:nth-child(2) { animation-delay: .15s; }
+.typing span:nth-child(3) { animation-delay: .3s; }
+
+.dot-grid {
+  background-image: radial-gradient(#e4e4e7 1px, transparent 1px);
+  background-size: 18px 18px;
+}
