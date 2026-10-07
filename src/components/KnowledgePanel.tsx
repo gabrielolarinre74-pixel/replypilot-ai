@@ -117,7 +117,7 @@ export default (props: Props) => {
                 <span class={`i-ph-file-text-bold mt-0.5 shrink-0 ${selected() === d.id ? 'text-brand-400' : 'text-ink-400'}`} />
                 <span class="min-w-0">
                   <span class="block truncate text-[13px] font-semibold">{d.title}</span>
-                  <span class={`block text-[11.5px] ${selected() === d.id ? 'text-ink-400' : 'text-ink-500'}`}>{wordCount(d.content)} words · {props.index().chunks.filter(c => c.docId === d.id).length} passages</span>
+                  <span class={`block text-[11.5px] ${selected() === d.id ? 'text-ink-400' : 'text-ink-500'}`}>{wordCount(d.content)} words · {(n => `${n} passage${n === 1 ? '' : 's'}`)(props.index().chunks.filter(c => c.docId === d.id).length)}</span>
                 </span>
               </button>
             </li>
