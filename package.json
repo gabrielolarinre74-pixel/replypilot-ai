@@ -6,7 +6,7 @@
   "engines": {
     "node": ">=20"
   },
-  "description": "AI customer-support and email-reply agent grounded in your own business knowledge base (RAG).",
+  "description": "Support desk for chat and email that answers from your own knowledge base with citations, triage, hand-off and knowledge-gap insights.",
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",

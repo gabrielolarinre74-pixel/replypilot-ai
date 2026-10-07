@@ -1,98 +1,108 @@
 <div align="center">
 
-<img src="public/icon.svg" width="72" alt="ReplyPilot logo" />
+<img src="public/icon.svg" width="64" alt="ReplyPilot" />
 
 # ReplyPilot
 
-**An AI customer-support and email-reply agent that answers from your own business knowledge, cites its sources and hands tricky conversations to a human.**
+### The support desk that answers from your own policies, and tells you what they're missing.
 
-**Runs entirely in your browser** · built-in demo mode, no sign-up and no API key needed · [Run it locally](#run-it-locally)
+Live chat, email replies, a knowledge base and insights in one browser app.
+Every answer cites its sources, risky conversations go to a person, and questions your docs can't answer turn into a to-do list.
 
-![ReplyPilot chat](docs/screenshots/chat.png)
+**Runs entirely in your browser** · demo mode works offline with no API key · [Run it locally](#run-it-locally)
+
+<img src="docs/screenshots/chat.png" alt="ReplyPilot live chat with conversation details" width="100%" />
 
 </div>
 
-## Why businesses use it
+---
 
-Most small teams answer the same questions every day: *Where is my order? Can I get a refund? Are you open on Saturday?* Generic chatbots either give vague answers or confidently make things up.
+## Why ReplyPilot
 
-ReplyPilot works differently:
+Small teams answer the same questions every day: delivery times, returns, broken items, opening hours. Generic chatbots either make things up or give vague answers. ReplyPilot does two things differently:
 
-- It **only answers from your documents** (policies, FAQs, price lists) and shows the exact passages it used.
-- It **knows when it doesn't know**. If your knowledge base doesn't cover a question, it says so and hands off instead of guessing.
-- It **triages every message** (intent, sentiment, urgency) so angry customers, legal threats and "let me speak to a manager" requests reach a person fast.
-- It **drafts full email replies** that answer every question in the customer's email, in the tone you choose, ready to copy into your inbox.
+1. **It only answers from what you wrote.** Each reply is built from passages in your knowledge base and shows numbered citations. If the docs don't cover a question, it says so and hands the conversation to a person instead of guessing.
+2. **It shows you what to write next.** Every unanswered question is logged and grouped, so you can see which policies are missing and fix them in one click.
 
 ## Features
 
-### Live chat agent
-- Streaming chat interface with Markdown rendering and inline citation badges `¹ ²`
-- Expandable **source panel** under every answer, with the passage, its relevance score and how much of the question it covers
-- **Confidence indicator** (high / medium / low) based on retrieval coverage
-- Follow-up awareness: short follow-ups such as "and to Canada?" reuse the previous question for retrieval
-- Regenerate, copy, stop generation, and export the conversation as Markdown
+### Live chat
+- A chat window that works like a real support inbox, with suggested starter questions
+- Answers stream in with numbered citations and an expandable list of sources and match strength
+- A **conversation details** panel for the selected message shows intent, sentiment, urgency, hand-off reasons, answer confidence and the documents used
+- Follow-up questions ("and to Canada?") reuse the previous message as context, but only when needed
+- Stop, regenerate, copy, start a new conversation, or download the transcript as Markdown
 
-### Email reply assistant
-- Paste any customer email and get a complete reply with greeting, empathy line, grounded answers and sign-off
-- **Multi-question detection**: every question in the email is retrieved and answered separately
-- Automatic **reply subject** (`Re: …` from the original subject, or one based on intent)
-- Three tones: Friendly, Professional and Concise
-- One-click copy or "Open in mail app" (`mailto:` with subject and body filled in)
+### Email replies
+- A three-pane layout: sample inbox, the customer's email, and your reply
+- Finds every question in a long email and answers each one
+- Friendly, professional or concise tone, a suggested subject line, and the email signed with your business name
+- The draft is editable. Copy it, open it in your mail app, or **save it as a reusable reply**
+- **Saved replies**: names are stored as `{{customer}}`, `{{business}}` and `{{agent}}` placeholders and filled in again when you insert them
+- Emails flagged for a human get a clear warning before you send
 
-### Instant triage (no AI call needed)
-- Intent detection: damaged item, refund, shipping, billing, booking, pricing, technical, cancellation, complaint, sales lead
-- Sentiment and urgency scoring (including SHOUTING and "I need this today")
-- **Human hand-off rules** for legal threats, bank disputes, requests for a manager and strongly negative refund requests
+### Knowledge base
+- A document library with search, a focused editor and an unsaved-changes indicator
+- Upload `.md` or `.txt` files, export everything as JSON, or reset to the sample store
+- **Retrieval test**: type a question and see exactly which passages the agent would use, with scores
 
-### Knowledge base manager
-- Add, edit and delete documents, or **upload `.md` / `.txt` files**
-- The search index rebuilds instantly on every change
-- **Retrieval tester**: type a question and see exactly which passages the agent would use
-- Export the knowledge base as JSON, or reset to the sample store
-- Everything is saved in the browser (localStorage); nothing is uploaded anywhere
+### Insights
+- Conversation count, the share answered from your docs, hand-offs and open knowledge gaps
+- **Knowledge gaps**: low-confidence questions grouped by similar wording ("Do you offer gift wrapping?" and "Is gift wrapping available?" count as one), sorted by how often they're asked
+- **Write answer** opens a pre-filled draft document in the knowledge base
+- Breakdown by topic and sentiment, most-cited documents, recent activity, and CSV export
 
-### Two answer engines
-| Engine | Needs a key? | How it works |
+### Triage on every message
+Intent (damaged item, refund, shipping, billing, sales lead and more), sentiment, urgency and hand-off rules for legal threats, requests for a person and very negative messages. It runs locally, with no AI call needed.
+
+### Two engines
+| | Demo mode | AI model |
 |---|---|---|
-| **Demo engine** (default) | No | Ranks sentences from the retrieved passages and composes an answer from them. It can't invent facts, so it's a safe fallback. |
-| **AI model** | Yes (yours) | Sends the numbered passages and strict grounding rules to any **OpenAI-compatible API**: OpenAI, Groq, Together, OpenRouter, or a local Ollama / LM Studio server. |
+| API key | Not needed | Yours, any OpenAI-compatible API |
+| How it answers | Picks the best sentences from your docs and adds citations | Sends the question and numbered passages to the model with strict grounding rules |
+| Works offline | Yes | No |
+
+## Screenshots
+
+| Email replies | Insights and knowledge gaps |
+|---|---|
+| ![Email replies](docs/screenshots/email.png) | ![Insights](docs/screenshots/insights.png) |
+
+| Knowledge base | Gap turned into a draft document |
+|---|---|
+| ![Knowledge base](docs/screenshots/knowledge-base.png) | ![Gap to document](docs/screenshots/gap-to-doc.png) |
+
+| Empty chat | Settings |
+|---|---|
+| ![Empty chat](docs/screenshots/chat-empty.png) | ![Settings](docs/screenshots/settings.png) |
+
+The sample store ("Harbor & Pine Home Goods"), its policies and the inbox emails are fictional.
 
 ## How it works
 
 ```
 customer message
-      │
-      ├─► triage.ts      intent · sentiment · urgency · hand-off rules
-      │
-      ├─► rag.ts         chunk docs ➜ BM25 index ➜ per-question retrieval ➜ confidence
-      │
-      └─► agent.ts       demo engine (extractive)  ──or──  LLM prompt with numbered sources
-                                         │
-                                         ▼
-                          answer + citations + sources + confidence
+   │
+   ├─ triage.ts      intent · sentiment · urgency · hand-off rules
+   ├─ rag.ts         BM25 search over passages, synonyms, rarity-weighted coverage → confidence
+   ├─ agent.ts       demo engine (grounded sentence picking)  or  LLM prompt with numbered sources
+   └─ insights.ts    conversation log → answer rate, topics, knowledge gaps
 ```
 
-- **Retrieval:** documents are split into ~90-word passages on paragraph and sentence boundaries, then indexed with Okapi BM25. Queries get light stemming and business synonyms (refund ↔ money back, shipping ↔ delivery, broken ↔ damaged), with synonyms weighted at half strength.
-- **Grounding:** in AI mode the system prompt tells the model to use only the numbered passages, cite them, never promise refunds or dates that aren't in the passages, and use a fixed hand-off sentence when the answer isn't there.
-- **Privacy:** the app is fully static. Documents and the optional API key stay in the user's browser, and the key is only ever sent to the API URL the user configures (https is required, except for localhost).
+Coverage is weighted by how rare each word is in your docs. A question like "Do you ship to Japan?" therefore gets low confidence when Japan isn't mentioned anywhere, even though "ship" matches.
+
+## Privacy and security
+- Everything runs in the browser. Documents, settings, saved replies and the conversation log stay in `localStorage`.
+- In AI mode the key is stored only in this browser and sent only to the API URL you set. Non-HTTPS URLs are rejected, except `localhost`.
+- Model output is rendered as Markdown with raw HTML turned off, and links open with `rel="noopener noreferrer"`.
+- Input sizes are limited (chat messages, emails, documents, uploads), and the log is capped at 500 entries.
 
 ## Tech stack
-
-- [Astro 5](https://astro.build) (static output) + [SolidJS](https://www.solidjs.com) for the interactive app
-- [UnoCSS](https://unocss.dev) with Phosphor icons, light and dark themes
-- `markdown-it` (raw HTML disabled, so model output can't inject scripts) + `highlight.js` core
-- [Vitest](https://vitest.dev) unit tests for retrieval, triage, the demo engine, prompts and settings validation
-- GitHub Actions CI: tests and a production build on every push and pull request
-
-## Screenshots
-
-| Email replies | Knowledge base |
-|---|---|
-| ![Email reply](docs/screenshots/email.png) | ![Knowledge base](docs/screenshots/knowledge-base.png) |
-
-| Landing | Dark mode |
-|---|---|
-| ![Landing](docs/screenshots/hero.png) | ![Dark mode](docs/screenshots/dark.png) |
+- **Astro 5** (static output) with **SolidJS** islands
+- **UnoCSS** with Phosphor icons, **Plus Jakarta Sans** and **JetBrains Mono**
+- `markdown-it` and `highlight.js` core for rendering answers
+- **Vitest** for retrieval, triage, the demo engine, insights and saved-reply tests
+- **TypeScript** type checking and GitHub Actions CI
 
 ## Run it locally
 
@@ -103,47 +113,35 @@ git clone https://github.com/gabrielolarinre74-pixel/replypilot-ai.git
 cd replypilot-ai
 npm install
 npm run dev        # http://localhost:4321
-npm test           # unit tests
-npm run build      # static site in dist/
-npm run preview    # serve the production build locally
 ```
 
-Then open http://localhost:4321 in your browser.
+```bash
+npm test           # unit tests
+npm run check      # type-check
+npm run build      # static site in dist/
+npm run preview    # serve the production build
+```
 
 ### Demo mode (no API key)
+The app opens in demo mode with the sample store's knowledge base. Try a question in **Live chat**, draft a reply in **Email replies**, then open **Insights** to see the log and any knowledge gaps. Nothing leaves your browser.
 
-The app opens in **demo mode** by default. It ships with a sample knowledge base for a fictional home-goods store, and answers come from the built-in retrieval engine with cited sources, all inside your browser. Nothing is sent anywhere, so you can try every feature straight away. Switch to a real model at any time in **Settings**.
+### Using a real model
+Press <kbd>,</kbd> or open **Settings**, choose **AI model**, then add your API key, base URL and model. Any OpenAI-compatible endpoint works. For a local setup with Ollama, use `http://localhost:11434/v1`.
 
-To use a real model, open **Settings → AI model**, paste your API key and (optionally) change the base URL and model name. For a fully local setup, point the base URL at Ollama: `http://localhost:11434/v1`.
+`.env.example` lists optional build-time defaults. Never put an API key there: `PUBLIC_*` values are bundled into the page.
 
-`.env.example` lists the optional build-time defaults. Never put an API key in it: `PUBLIC_*` values are bundled into the browser.
+### Keyboard shortcuts
+<kbd>1</kbd>–<kbd>4</kbd> switch sections · <kbd>,</kbd> opens settings · <kbd>Enter</kbd> sends · <kbd>Shift</kbd>+<kbd>Enter</kbd> adds a new line
 
-## Use it for your business
-
-1. Open the **Knowledge base** tab, delete the sample documents and paste or upload your own policies and FAQs.
+## Make it yours
+1. Open **Knowledge base**, remove the sample documents and add your own policies and FAQs.
 2. Set your business name and email signature in **Settings**.
-3. Use the **Retrieval tester** to check that common questions find the right passages.
-4. Answer chats and draft emails, and review anything flagged for a human before you send it.
-
-## Project structure
-
-```
-src/
-  lib/
-    text.ts             tokenizer, stemmer, synonyms, sentence splitter
-    rag.ts              chunking, BM25 index, confidence, multi-question search
-    triage.ts           intent / sentiment / urgency / hand-off rules
-    agent.ts            demo engine, LLM prompt builder, streaming client
-    settings.ts         settings, safe storage, validation
-    sampleKnowledge.ts  sample store used in demo mode
-  components/           Solid components (chat, email, knowledge base, settings)
-tests/                  Vitest suites
-```
+3. Use **Retrieval test** to check that common questions find the right passages.
+4. Check **Insights** each week and fill the top knowledge gaps.
 
 ## License
-
 MIT. See [LICENSE](LICENSE).
 
 ---
 
-Built by **Gabriel Zion · Gabriel.ATH**. I build websites, apps and AI automation that help businesses grow. [Portfolio](https://gabrielzion-portfolio.vercel.app)
+Designed and built by **Gabriel Zion · Gabriel.ATH**. I build websites, apps and AI automation that help businesses grow. [Portfolio](https://gabrielzion-portfolio.vercel.app)
