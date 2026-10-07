@@ -21,11 +21,12 @@ interface Props {
 // html: false keeps any HTML in model output escaped (prevents XSS from prompt-injected answers)
 hljs.registerLanguage('json', json)
 hljs.registerLanguage('plaintext', plaintext)
-const md: MarkdownIt = MarkdownIt({
+const escapeHtml = (s: string) => s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!))
+const md = MarkdownIt({
   html: false,
   linkify: true,
   breaks: true,
-  highlight: (code, lang) => (lang && hljs.getLanguage(lang) ? hljs.highlight(code, { language: lang }).value : md.utils.escapeHtml(code)),
+  highlight: (code: string, lang: string) => (lang && hljs.getLanguage(lang) ? hljs.highlight(code, { language: lang }).value : escapeHtml(code)),
 })
 md.renderer.rules.link_open = (tokens, idx, options, _env, self) => {
   tokens[idx].attrSet('target', '_blank')
