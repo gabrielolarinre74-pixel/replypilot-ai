@@ -66,6 +66,7 @@ describe('rarity-weighted coverage', () => {
   })
   it('keeps covered questions confident', () => {
     expect(confidenceOf(multiSearch(idx, 'Do you ship to Canada?'))).toBe('high')
+    expect(confidenceOf(multiSearch(idx, 'Also, do you ship to the UK?'))).not.toBe('low')
     expect(confidenceOf(multiSearch(idx, 'How do I return something?'))).not.toBe('low')
     expect(confidenceOf(multiSearch(idx, 'How long does delivery take?'))).not.toBe('low')
   })

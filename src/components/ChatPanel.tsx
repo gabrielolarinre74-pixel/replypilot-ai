@@ -1,6 +1,6 @@
 import { For, Show, createMemo, createSignal, onMount } from 'solid-js'
 import { buildLLMMessages, demoAnswer, streamChat, typewriter } from '@/lib/agent'
-import { multiSearch } from '@/lib/rag'
+import { confidenceOf, multiSearch } from '@/lib/rag'
 import { validateSettings } from '@/lib/settings'
 import { triage } from '@/lib/triage'
 import { makeEntry } from '@/lib/insights'
@@ -90,9 +90,14 @@ export default (props: Props) => {
     controller = new AbortController()
     const idx = props.index()
     // short follow-ups ("and to Canada?") borrow the previous customer turn as context
+    // (only when the message on its own doesn't match the knowledge base well)
     const prevUser = [...history].reverse().slice(1).find(m => m.role === 'user')
-    const query = last.content.split(/\s+/).length < 5 && prevUser ? `${prevUser.content} ${last.content}` : last.content
-    const hits = multiSearch(idx, query)
+    let query = last.content
+    let hits = multiSearch(idx, query)
+    if (prevUser && last.content.split(/\s+/).length < 5 && confidenceOf(hits) === 'low') {
+      query = `${prevUser.content} ${last.content}`
+      hits = multiSearch(idx, query)
+    }
     const input = {
       message: last.content, hits, mode: 'chat' as const, triage: last.triage!, settings: s,
       businessName: props.businessName(), history: history.slice(0, -1).map(m => ({ role: m.role, content: m.content })),

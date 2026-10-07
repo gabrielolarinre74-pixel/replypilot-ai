@@ -25,6 +25,10 @@ const SYNONYMS: Record<string, string[]> = {
   crack: ['damage', 'damaged', 'broken', 'replacement'],
   damage: ['broken', 'faulty', 'defect'],
   remove: ['disappear', 'refund'],
+  // country short forms used in emails vs. full names used in policies
+  uk: ['kingdom', 'britain', 'british'],
+  usa: ['states', 'america'],
+  canada: ['canadian'],
 }
 
 export function stem(word: string): string {
