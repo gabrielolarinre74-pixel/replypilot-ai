@@ -56,3 +56,17 @@ describe('stemming', () => {
     expect(stem('dress')).toBe('dress')
   })
 })
+
+describe('rarity-weighted coverage', () => {
+  const idx = new KnowledgeIndex(SAMPLE_DOCS)
+  it('lowers confidence when the specific word in a question is unknown', () => {
+    expect(confidenceOf(multiSearch(idx, 'Do you ship to Japan?'))).toBe('low')
+    expect(confidenceOf(multiSearch(idx, 'Do you offer gift wrapping?'))).toBe('low')
+    expect(confidenceOf(multiSearch(idx, 'Can I pay with crypto?'))).not.toBe('high')
+  })
+  it('keeps covered questions confident', () => {
+    expect(confidenceOf(multiSearch(idx, 'Do you ship to Canada?'))).toBe('high')
+    expect(confidenceOf(multiSearch(idx, 'How do I return something?'))).not.toBe('low')
+    expect(confidenceOf(multiSearch(idx, 'How long does delivery take?'))).not.toBe('low')
+  })
+})

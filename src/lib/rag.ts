@@ -97,9 +97,17 @@ export class KnowledgeIndex {
         score += weight * this.idf(term) * (f * (this.k1 + 1)) / (f + this.k1 * (1 - this.b + this.b * chunk.tokens.length / (this.avgLen || 1)))
       }
       if (score > 0) {
-        // a query word counts as covered if it, or one of its synonyms, appears in the passage
-        const found = [...core].filter(t => tf.has(t) || synonymsOf(t).some(s => tf.has(s))).length
-        hits.push({ chunk, score, coverage: core.size ? found / core.size : 0 })
+        // A query word counts as covered if it, or one of its synonyms, appears in the passage.
+        // Words are weighted by rarity (IDF), so missing a specific word like "crypto" or
+        // "Japan" lowers coverage far more than missing a generic one like "order".
+        let found = 0
+        let total = 0
+        for (const t of core) {
+          const w = this.idf(t)
+          total += w
+          if (tf.has(t) || synonymsOf(t).some(s => tf.has(s))) found += w
+        }
+        hits.push({ chunk, score, coverage: total ? found / total : 0 })
       }
     }
     return hits.sort((a, b) => b.score - a.score).slice(0, k)
@@ -111,6 +119,8 @@ export function confidenceOf(hits: SearchHit[]): Confidence {
   if (!top) return 'low'
   if (top.coverage >= 0.5 && top.score >= 2) return 'high'
   if (top.coverage > 0.3 && top.score >= 1) return 'medium'
+  // a short question whose every word is covered ("delivery time?") is still a solid match
+  if (top.coverage >= 0.99 && top.score >= 0.5) return 'medium'
   return 'low'
 }
 

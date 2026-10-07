@@ -5,7 +5,7 @@ having he her hers him his how i if in into is it its just me my of on or our ou
 the their them then there these they this those to too us was we were what when where which who whom why will
 with would you your yours am also any about after again all being both each few more most other own same should
 only very s t don now hi hello hey thanks thank regards dear get got im ive id
-take takes long much many need want know tell like way also still really`.split(/\s+/))
+take takes long much many need want know tell like way also still really something anything everything someone thing things now`.split(/\s+/))
 
 // Lightweight synonym groups so "money back" can still find the refund policy.
 const SYNONYMS: Record<string, string[]> = {
