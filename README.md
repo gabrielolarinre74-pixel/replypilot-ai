@@ -6,7 +6,7 @@
 
 **An AI customer-support and email-reply agent that answers from your own business knowledge, cites its sources and hands tricky conversations to a human.**
 
-[**Live demo**](https://gabrielolarinre74-pixel.github.io/replypilot-ai/) · runs in the browser, no sign-up and no API key needed
+**Runs entirely in your browser** · built-in demo mode, no sign-up and no API key needed · [Run it locally](#run-it-locally)
 
 ![ReplyPilot chat](docs/screenshots/chat.png)
 
@@ -82,7 +82,7 @@ customer message
 - [UnoCSS](https://unocss.dev) with Phosphor icons, light and dark themes
 - `markdown-it` (raw HTML disabled, so model output can't inject scripts) + `highlight.js` core
 - [Vitest](https://vitest.dev) unit tests for retrieval, triage, the demo engine, prompts and settings validation
-- GitHub Actions: tests, build and deploy to GitHub Pages on every push
+- GitHub Actions CI: tests and a production build on every push and pull request
 
 ## Screenshots
 
@@ -96,6 +96,8 @@ customer message
 
 ## Run it locally
 
+You need **Node.js 20+** and npm.
+
 ```bash
 git clone https://github.com/gabrielolarinre74-pixel/replypilot-ai.git
 cd replypilot-ai
@@ -103,7 +105,14 @@ npm install
 npm run dev        # http://localhost:4321
 npm test           # unit tests
 npm run build      # static site in dist/
+npm run preview    # serve the production build locally
 ```
+
+Then open http://localhost:4321 in your browser.
+
+### Demo mode (no API key)
+
+The app opens in **demo mode** by default. It ships with a sample knowledge base for a fictional home-goods store, and answers come from the built-in retrieval engine with cited sources, all inside your browser. Nothing is sent anywhere, so you can try every feature straight away. Switch to a real model at any time in **Settings**.
 
 To use a real model, open **Settings → AI model**, paste your API key and (optionally) change the base URL and model name. For a fully local setup, point the base URL at Ollama: `http://localhost:11434/v1`.
 
@@ -126,7 +135,7 @@ src/
     triage.ts           intent / sentiment / urgency / hand-off rules
     agent.ts            demo engine, LLM prompt builder, streaming client
     settings.ts         settings, safe storage, validation
-    sampleKnowledge.ts  sample store used by the live demo
+    sampleKnowledge.ts  sample store used in demo mode
   components/           Solid components (chat, email, knowledge base, settings)
 tests/                  Vitest suites
 ```

@@ -3,10 +3,10 @@ import unocss from 'unocss/astro'
 import solidJs from '@astrojs/solid-js'
 
 // Static build: the whole agent (retrieval, triage, demo engine) runs in the browser,
-// so it can be hosted on GitHub Pages or any static host.
-// BASE_PATH is set by the GitHub Pages workflow (e.g. "/replypilot-ai").
+// so the dist/ folder can be served by any static host.
+// Set BASE_PATH only when serving from a sub-path (e.g. "/replypilot").
 export default defineConfig({
-  site: process.env.SITE_URL || 'https://gabrielolarinre74-pixel.github.io',
+  site: process.env.SITE_URL || undefined,
   base: process.env.BASE_PATH || '/',
   output: 'static',
   integrations: [unocss({ injectReset: true }), solidJs()],
